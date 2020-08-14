@@ -1,0 +1,811 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Twitter Card</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/ipfs/dist/index.min.js"></script>
+    <script src="/orbitdb.js"></script>
+
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+
+    <script src="https://unpkg.com/h3-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.20/system-polyfills.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+    <style>
+        #map {
+            height: 100%;
+        }
+
+        ul.timeline {
+            list-style-type: none;
+            position: relative;
+
+            word-break: break-all;
+
+        }
+
+        ul.timeline:before {
+            content: ' ';
+            background: #d4d9df;
+            display: inline-block;
+            position: absolute;
+            left: 29px;
+            width: 2px;
+            height: 100%;
+            z-index: 400;
+        }
+
+        ul.timeline>li {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+
+        ul.timeline>li:before {
+            content: ' ';
+            background: white;
+            display: inline-block;
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid #22c0e8;
+            left: 20px;
+            width: 20px;
+            height: 20px;
+            z-index: 400;
+        }
+
+
+        .bg_blur {
+            background-color: cadetblue;
+            height: 300px;
+            background-size: cover;
+        }
+
+        .follow_btn {
+            text-decoration: none;
+            position: absolute;
+            left: 35%;
+            top: 42.5%;
+            width: 35%;
+            height: 15%;
+            background-color: #007FBE;
+            padding: 10px;
+            padding-top: 6px;
+            color: #fff;
+            text-align: center;
+            font-size: 20px;
+            border: 4px solid #007FBE;
+        }
+
+        .follow_btn:hover {
+            text-decoration: none;
+            position: absolute;
+            left: 35%;
+            top: 42.5%;
+            width: 35%;
+            height: 15%;
+            background-color: #007FBE;
+            padding: 10px;
+            padding-top: 6px;
+            color: #fff;
+            text-align: center;
+            font-size: 20px;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .header {
+            color: #808080;
+            margin-left: 10%;
+            margin-top: 70px;
+        }
+
+        .picture {
+            height: 150px;
+            width: 150px;
+            position: absolute;
+            top: 75px;
+            left: -75px;
+        }
+
+        .picture_mob {
+            position: absolute;
+            width: 35%;
+            left: 35%;
+            bottom: 70%;
+        }
+
+        .btn-style {
+            color: #fff;
+            background-color: #007FBE;
+            border-color: #adadad;
+            width: 33.3%;
+        }
+
+        .btn-style:hover {
+            color: #333;
+            background-color: #3D5DE0;
+            border-color: #adadad;
+            width: 33.3%;
+
+        }
+
+        img.secondary {
+            filter: hue-rotate(120deg);
+        }
+
+        img.primary {
+            filter: hue-rotate(60deg);
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- Image and text -->
+    <nav class="navbar navbar-light bg-light" style="background-color: #e3f2fd;">
+        <a href="/" target="_self"> <button class="btn btn-outline-success" type="button">Back</button></a>
+
+        <a class="navbar-brand" target="_self" href="/">
+          
+        </a>
+    </nav>
+
+    <div class="row panel">
+        <div class="col-md-4 bg_blur ">
+            <div class="col-md-4 bg_blur " class="follow_btn">
+                <label for="sel1">View Location as:</label>
+                <select class="form-control" id="sel1">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>5</option>
+                    <option>10</option>
+                    <option selected>20</option>
+                    <option>30</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-8  col-xs-12">
+            <img id="avatar" src="http://lorempixel.com/output/people-q-c-100-100-1.jpg" class="img-thumbnail picture hidden-xs" />
+            <!-- <img src="http://lorempixel.com/output/people-q-c-100-100-1.jpg" class="img-thumbnail visible-xs picture_mob" /> -->
+            <div class="header">
+                <h1 id="name">Lorem Ipsum</h1>
+                <h4 id="description">Web Developer</h4>
+                <span ></span>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-md-6 p-5">
+            <div id="status">Init</div>
+            <div>
+                <header id="output-header"></header>
+                <div id="output"></div>
+            </div>
+
+        </div>
+        <div class="col-md-6 p-5">
+            <h4>Latest Tweets</h4>
+            <ul id="timeline" class="timeline">
+
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="container mt-12 mb-12">
+
+        <div id="mapid" style="height: 100%;"></div>
+    </div>
+
+
+    <div class="container mt-12 mb-12">
+        <!-- <div class="row">
+            <div class="col-md-6 ">
+                <h4>Latest Tweets</h4>
+                <ul id="timeline" class="timeline">
+
+                </ul>
+            </div>
+
+
+        </div> -->
+        <!-- <div class="col-md-12">
+            <div id="mapid" style="height: 100%;"></div>
+        </div> -->
+    </div>
+
+
+
+
+</body>
+<script>
+    const IPFSConfig = {
+        repo: '/orbitdb/examples/browser/new/ipfs/0.33.1',
+        relay: {
+            enabled: true
+        },
+        hop: {
+            enabled: true,
+            active: true
+        },
+        start: true,
+        preload: {
+            enabled: false
+        },
+        EXPERIMENTAL: {
+            pubsub: true,
+        },
+        config: {
+            Addresses: {
+                Swarm: [
+                    // Use IPFS dev signal server
+                    // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+                    // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star', ,
+                    '/dns4/webrtc-star.discovery.libp2p.io/tcp/443/wss/p2p-webrtc-star'
+                    // '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+                    // '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+                    //'/ip4/127.0.0.1/tcp/13579/wss/p2p-webrtc-star'
+                ]
+            },
+        }
+    }
+
+
+    const listenerConfig = {
+        "id": "QmcrQZ6RJdpYuGvZqD5QEHAv6qX4BrQLJLQPQUrTrzdcgm",
+        "privKey": "CAASqAkwggSkAgEAAoIBAQDLZZcGcbe4urMBVlcHgN0fpBymY+xcr14ewvamG70QZODJ1h9sljlExZ7byLiqRB3SjGbfpZ1FweznwNxWtWpjHkQjTVXeoM4EEgDSNO/Cg7KNlU0EJvgPJXeEPycAZX9qASbVJ6EECQ40VR/7+SuSqsdL1hrmG1phpIju+D64gLyWpw9WEALfzMpH5I/KvdYDW3N4g6zOD2mZNp5y1gHeXINHWzMF596O72/6cxwyiXV1eJ000k1NVnUyrPjXtqWdVLRk5IU1LFpoQoXZU5X1hKj1a2qt/lZfH5eOrF/ramHcwhrYYw1txf8JHXWO/bbNnyemTHAvutZpTNrsWATfAgMBAAECggEAQj0obPnVyjxLFZFnsFLgMHDCv9Fk5V5bOYtmxfvcm50us6ye+T8HEYWGUa9RrGmYiLweuJD34gLgwyzE1RwptHPj3tdNsr4NubefOtXwixlWqdNIjKSgPlaGULQ8YF2tm/kaC2rnfifwz0w1qVqhPReO5fypL+0ShyANVD3WN0Fo2ugzrniCXHUpR2sHXSg6K+2+qWdveyjNWog34b7CgpV73Ln96BWae6ElU8PR5AWdMnRaA9ucA+/HWWJIWB3Fb4+6uwlxhu2L50Ckq1gwYZCtGw63q5L4CglmXMfIKnQAuEzazq9T4YxEkp+XDnVZAOgnQGUBYpetlgMmkkh9qQKBgQDvsEs0ThzFLgnhtC2Jy//ZOrOvIAKAZZf/mS08AqWH3L0/Rjm8ZYbLsRcoWU78sl8UFFwAQhMRDBP9G+RPojWVahBL/B7emdKKnFR1NfwKjFdDVaoX5uNvZEKSl9UubbC4WZJ65u/cd5jEnj+w3ir9G8n+P1gp/0yBz02nZXFgSwKBgQDZPQr4HBxZL7Kx7D49ormIlB7CCn2i7mT11Cppn5ifUTrp7DbFJ2t9e8UNk6tgvbENgCKXvXWsmflSo9gmMxeEOD40AgAkO8Pn2R4OYhrwd89dECiKM34HrVNBzGoB5+YsAno6zGvOzLKbNwMG++2iuNXqXTk4uV9GcI8OnU5ZPQKBgCZUGrKSiyc85XeiSGXwqUkjifhHNh8yH8xPwlwGUFIZimnD4RevZI7OEtXw8iCWpX2gg9XGuyXOuKORAkF5vvfVriV4e7c9Ad4Igbj8mQFWz92EpV6NHXGCpuKqRPzXrZrNOA9PPqwSs+s9IxI1dMpk1zhBCOguWx2m+NP79NVhAoGBAI6WSoTfrpu7ewbdkVzTWgQTdLzYNe6jmxDf2ZbKclrf7lNr/+cYIK2Ud5qZunsdBwFdgVcnu/02czeS42TvVBgs8mcgiQc/Uy7yi4/VROlhOnJTEMjlU2umkGc3zLzDgYiRd7jwRDLQmMrYKNyEr02HFKFn3w8kXSzW5I8rISnhAoGBANhchHVtJd3VMYvxNcQb909FiwTnT9kl9pkjhwivx+f8/K8pDfYCjYSBYCfPTM5Pskv5dXzOdnNuCj6Y2H/9m2SsObukBwF0z5Qijgu1DsxvADVIKZ4rzrGb4uSEmM6200qjJ/9U98fVM7rvOraakrhcf9gRwuspguJQnSO9cLj6",
+        "pubKey": "CAASpgIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLZZcGcbe4urMBVlcHgN0fpBymY+xcr14ewvamG70QZODJ1h9sljlExZ7byLiqRB3SjGbfpZ1FweznwNxWtWpjHkQjTVXeoM4EEgDSNO/Cg7KNlU0EJvgPJXeEPycAZX9qASbVJ6EECQ40VR/7+SuSqsdL1hrmG1phpIju+D64gLyWpw9WEALfzMpH5I/KvdYDW3N4g6zOD2mZNp5y1gHeXINHWzMF596O72/6cxwyiXV1eJ000k1NVnUyrPjXtqWdVLRk5IU1LFpoQoXZU5X1hKj1a2qt/lZfH5eOrF/ramHcwhrYYw1txf8JHXWO/bbNnyemTHAvutZpTNrsWATfAgMBAAE="
+    }
+
+    const dialerConfig = {
+        "id": "Qma3GsJmB47xYuyahPZPSadh1avvxfyYQwk8R3UnFrQ6aP",
+        "privKey": "CAASpwkwggSjAgEAAoIBAQCaNSDOjPz6T8HZsf7LDpxiQRiN2OjeyIHUS05p8QWOr3EFUCFsC31R4moihE5HN+FxNalUyyFZU//yjf1pdnlMJqrVByJSMa+y2y4x2FucpoCAO97Tx+iWzwlZ2UXEUXM1Y81mhPbeWXy+wP2xElTgIER0Tsn/thoA0SD2u9wJuVvM7dB7cBcHYmqV6JH+KWCedRTum6O1BssqP/4Lbm2+rkrbZ4+oVRoU2DRLoFhKqwqLtylrbuj4XOI3XykMXV5+uQXz1JzubNOB9lsc6K+eRC+w8hhhDuFMgzkZ4qomCnx3uhO67KaICd8yqqBa6PJ/+fBM5Xk4hjyR40bwcf41AgMBAAECggEAZnrCJ6IYiLyyRdr9SbKXCNDb4YByGYPEi/HT1aHgIJfFE1PSMjxcdytxfyjP4JJpVtPjiT9JFVU2ddoYu5qJN6tGwjVwgJEWg1UXmPaAw1T/drjS94kVsAs82qICtFmwp52Apg3dBZ0Qwq/8qE1XbG7lLyohIbfCBiL0tiPYMfkcsN9gnFT/kFCX0LVs2pa9fHCRMY9rqCc4/rWJa1w8sMuQ23y4lDaxKF9OZVvOHFQkbBDrkquWHE4r55fchCz/rJklkPJUNENuncBRu0/2X+p4IKFD1DnttXNwb8j4LPiSlLro1T0hiUr5gO2QmdYwXFF63Q3mjQy0+5I4eNbjjQKBgQDZvZy3gUKS/nQNkYfq9za80uLbIj/cWbO+ZZjXCsj0fNIcQFJcKMBoA7DjJvu2S/lf86/41YHkPdmrLAEQAkJ+5BBNOycjYK9minTEjIMMmZDTXXugZ62wnU6F46uLkgEChTqEP57Y6xwwV+JaEDFEsW5N1eE9lEVX9nGIr4phMwKBgQC1TazLuEt1WBx/iUT83ita7obXqoKNzwsS/MWfY2innzYZKDOqeSYZzLtt9uTtp4X4uLyPbYs0qFYhXLsUYMoGHNN8+NdjoyxCjQRJRBkMtaNR0lc5lVDWl3bTuJovjFCgAr9uqJrmI5OHcCIk/cDpdWb3nWaMihVlePmiTcTy9wKBgQCU0u7c1jKkudqks4XM6a+2HAYGdUBk4cLjLhnrUWnNAcuyl5wzdX8dGPi8KZb+IKuQE8WBNJ2VXVj7kBYh1QmSJVunDflQSvNYCOaKuOeRoxzD+y9Wkca74qkbBmPn/6FFEb7PSZTO+tPHjyodGNgz9XpJJRjQuBk1aDJtlF3m1QKBgE5SAr5ym65SZOU3UGUIOKRsfDW4Q/OsqDUImvpywCgBICaX9lHDShFFHwau7FA52ScL7vDquoMB4UtCOtLfyQYA9995w9oYCCurrVlVIJkb8jSLcADBHw3EmqF1kq3NqJqm9TmBfoDCh52vdCCUufxgKh33kfBOSlXuf7B8dgMbAoGAZ3r0/mBQX6S+s5+xCETMTSNv7TQzxgtURIpVs+ZVr2cMhWhiv+n0Omab9X9Z50se8cWl5lkvx8vn3D/XHHIPrMF6qk7RAXtvReb+PeitNvm0odqjFv0J2qki6fDs0HKwq4kojAXI1Md8Th0eobNjsy21fEEJT7uKMJdovI/SErI=",
+        "pubKey": "CAASpgIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCaNSDOjPz6T8HZsf7LDpxiQRiN2OjeyIHUS05p8QWOr3EFUCFsC31R4moihE5HN+FxNalUyyFZU//yjf1pdnlMJqrVByJSMa+y2y4x2FucpoCAO97Tx+iWzwlZ2UXEUXM1Y81mhPbeWXy+wP2xElTgIER0Tsn/thoA0SD2u9wJuVvM7dB7cBcHYmqV6JH+KWCedRTum6O1BssqP/4Lbm2+rkrbZ4+oVRoU2DRLoFhKqwqLtylrbuj4XOI3XykMXV5+uQXz1JzubNOB9lsc6K+eRC+w8hhhDuFMgzkZ4qomCnx3uhO67KaICd8yqqBa6PJ/+fBM5Xk4hjyR40bwcf41AgMBAAE="
+    }
+
+    function min(input) {
+        if (toString.call(input) !== "[object Array]")
+            return false;
+        return Math.min.apply(null, input);
+    }
+
+  
+    const drwaH3 = function (h3, color) {
+        layer.addData(h3ToFeature(h3, color));
+        // , {
+        //     style: {
+        //         "color": color,
+        //         "weight": 5,
+        //         "opacity": 0.6
+        //     },
+        //     onEachFeature: function (feature, layer) {
+        //         layer.bindTooltip(feature.properties.id, {
+        //             noHide: true
+        //         });
+        //     }
+        // }
+
+    }
+
+    var maxK = 30
+    var minK = 2
+    const kAnn = function(sender){
+       var ss= sender.dataset['locs']  .split(",");  
+       data= ss
+       kAnonymity(ss)
+
+    }
+
+
+    const kAnonymity = function (sender) {
+        clearMap()
+        var array = sender;
+        var origin = array[0]
+
+        array = array.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+
+        maxK = min([maxK, array.length])
+
+        var reses = [];
+        var distances = []
+        for (let index = 0; index < array.length; index++) {
+            var h3Index = array[index];
+            var dist = h3.h3Distance(origin, h3Index)
+            distances.push([h3Index, dist])
+            var res = h3.h3GetResolution(h3Index)
+            reses.push(res)
+            // drwaH3(h3Index, "#ff7800")
+
+        }
+        distances.sort(compareSecondColumn);
+
+        //get min res
+        var minRes = min(reses.slice(minK, maxK + minK))
+
+        var points = distances.slice(minK, maxK + minK)
+
+        var maxDis = points[points.length - 1][0]
+        var minDis = points[0][0]
+        // addMarker(maxDis)
+        // addMarker(minDis)
+
+        var kanonymity = [];
+
+        var leveljump = 2;
+
+        var a = []
+        var r = []
+        points.forEach(element => {
+            var p = element[0]
+            var pp = h3.h3ToParent(p, Math.floor(Math.random() * 3) + 7)
+            // drwaH3(pp, "#7b1fa2")
+
+            var minres = 15;
+
+            // addMarker(p, "secondary")
+            for (let index = minres; index > -1; index--) {
+                console.log(index)
+                var p1 = h3.h3ToParent(p, index)
+                var p2 = h3.h3ToParent(origin, index)
+
+
+                if ((p1 == p2)) {
+                    // 
+                    a.push([p1])
+                    r.push(index)
+                    // drwaH3(p2, "#FF0000")
+                    kanonymity.push(p1)
+
+                    break;
+                }
+                else if(h3.h3IndexesAreNeighbors(p1, p2)){
+                    // drwaH3(p2, "#FF0000")
+                    // drwaH3(p1, "#FF0000")
+                    kanonymity.push(p1)
+                    kanonymity.push(p2)
+                    break;
+                }
+
+            }
+
+        });
+
+        kanonymity = kanonymity.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+        kanonymity = h3.compact(kanonymity)
+        kanonymity=kanonymity.reverse();
+
+        var fs = []
+        kanonymity.forEach(element => {
+           var f= turf.polygon([h3.h3ToGeoBoundary(element, true)], {combine: 'yes'})
+           fs.push(f)
+
+           // drwaH3(element, "#ff1744")
+            // resolutions.forEach(r =>{
+            //     var p1 = h3.h3ToParent(element, r)
+            //     if(!drawen.includes(element)){
+            //         drwaH3(element, "#ff1744")
+            //         drawen.push(element)
+            //         resolutions.push(h3.h3GetResolution(element))
+            //     }
+            // })
+
+
+            
+        });
+        var features = turf.featureCollection(fs);
+        //var dissolved = turf.dissolve(features, {propertyName: 'combine'});
+
+        layer.addData(features);
+        // addMarker(origin)
+        // drwaH3(origin, "#d50000")
+        // map.setView(addMarker(array[0]), 15);
+
+        // _northEast: j {
+        //     lat: 42.400492689472884,
+        //     lng: -71.57377195480383
+        // }
+        // _southWest: j {
+        //     lat: 39.34056938395393,
+        //     lng: -75.96061877033631
+        // }
+       var bb=  L.latLngBounds([
+            [39.34056938395393, -75.96061877033631],
+            [ 42.400492689472884, -71.57377195480383]
+        ])
+        map.fitBounds(layer.getBounds());
+        console.log(map.getBounds());
+    }
+
+
+    function compareSecondColumn(a, b) {
+        if (a[1] === b[1]) {
+            return 0;
+        } else {
+            return (a[1] < b[1]) ? -1 : 1;
+        }
+    }
+    const addMarker = function (hexis, type) {
+        var hexCenterCoordinates = h3.h3ToGeo(hexis)
+
+        if (!type)
+            type = 'primary'
+
+        var marker = L.marker(hexCenterCoordinates).addTo(map)
+        marker._icon.classList.add(type);
+        markers.push(marker);
+        return hexCenterCoordinates
+    }
+
+    const h3ToFeature = function (hexAddress) {
+        // Wrap in an array for a single-loop polygon
+        const coordinates = [h3.h3ToGeoBoundary(hexAddress, true)];
+        // var id = parseInt(hexAddress.slice(1, hexAddress.length)).toString()
+        return {
+            type: 'Feature',
+            id: hexAddress,
+            properties: {
+                id: hexAddress
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates
+            }
+        };
+    }
+
+    var layer = L.geoJson();
+    var markers = []
+    const clearMap = function () {
+        layer.clearLayers(); // inherited from LayerGroup
+        for(var i = 0; i < markers.length; i++){
+            map.removeLayer(markers[i]);
+        }
+        markers.length = 0
+                // map.removeLayer(markers);
+        // markers = new L.FeatureGroup();
+        // map.addLayer(markers)
+    }
+
+
+    const queryAndRender = async (db) => {
+        const networkPeers = await window.node.swarm.peers()
+        const databasePeers = await window.node.pubsub.peers(db.address.toString())
+
+        const result = db.index
+
+
+        dbType = db.type;
+        dbAddress = db.address;
+
+        outputHeaderElm.innerHTML = ``
+//        <div><b>Peer ID:</b> ${orbitdb.id}</div>
+
+
+        outputElm.innerHTML = `
+        <div><b>Peers (database/network):</b> ${databasePeers.length} / ${networkPeers.length}</div>
+        <div><b>Oplog Size:</b> ${Math.max(db._replicationStatus.progress, db._oplog.length)} / ${db._replicationStatus.max}</div>
+        <div id="results">
+            <div>
+            </div>
+        </div>
+        `
+        var element = document.getElementById('timeline');
+        var keys = Object.keys(result)
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i]
+
+            if (key == 'mykey' ) {
+                continue
+            }else if(key.includes('_usr')){
+                var avatar=document.getElementById("avatar")
+                var name=document.getElementById("name")
+                var description=document.getElementById("description")
+                var value = result[keys[i]]
+                value = JSON.parse(value)
+
+
+                name.innerText = value['name']+"("+ value['screen_name']+')'
+                description.innerText = value['description']
+                avatar.src = value['profile_image_url']
+            }else{
+
+            
+            var value = result[keys[i]]
+
+            value = JSON.parse(value)
+            // if (value['dbaddress'] != "address") {
+            var card = ` <li>
+                        <a  data-locs="${value['locs']}" onclick="kAnn(this)" href="javascript:void(0);">id :${value['id']} </a>
+                        <a href="#" class="float-right">${value['created_at']}</a>
+                        <p>${value['full_text']}</p>
+                        <p>retweet_count ${value['retweet_count']} </p>
+                        <p>favorite_count :${value['favorite_count']} </p>
+                    </li>`
+            element.innerHTML += card
+        }
+            // }
+
+        }
+
+
+
+    }
+
+    const rawPipe = (...fns) => {
+        let res
+        while (fns.length) {
+            res = fns.shift()(res)
+        }
+        return res
+    }
+
+    const isIterable = obj => obj && (
+        typeof obj[Symbol.asyncIterator] === 'function' ||
+        typeof obj[Symbol.iterator] === 'function' ||
+        typeof obj.next === 'function' // Probably, right?
+    )
+
+    const isDuplex = obj => obj && typeof obj.sink === 'function' && isIterable(obj.source)
+
+    const duplexPipelineFn = duplex => source => {
+        duplex.sink(source) // TODO: error on sink side is unhandled rejection - this is the same as pull streams
+        return duplex.source
+    }
+
+    const pipe = (...fns) => {
+        // Duplex at start: wrap in function and return duplex source
+        if (isDuplex(fns[0])) {
+            const duplex = fns[0]
+            fns[0] = () => duplex.source
+            // Iterable at start: wrap in function
+        } else if (isIterable(fns[0])) {
+            const source = fns[0]
+            fns[0] = () => source
+        }
+
+        if (fns.length > 1) {
+            // Duplex at end: use duplex sink
+            if (isDuplex(fns[fns.length - 1])) {
+                fns[fns.length - 1] = fns[fns.length - 1].sink
+            }
+        }
+
+        if (fns.length > 2) {
+            // Duplex in the middle, consume source with duplex sink and return duplex source
+            for (let i = 1; i < fns.length - 1; i++) {
+                if (isDuplex(fns[i])) {
+                    fns[i] = duplexPipelineFn(fns[i])
+                }
+            }
+        }
+
+        return rawPipe(...fns)
+    }
+
+
+
+    function streamToConsole(stream) {
+        pipe(
+            // Read from the stream (the source)
+            stream.source,
+            // Decode length-prefixed data
+            // lp.decode(),
+
+            // Sink function
+            async function (source) {
+                    // For each chunk of data
+                    for await (const msg of source) {
+                        // Output the data as a utf8 string
+                        console.log('> ' + msg.toString('utf8').replace('\n', ''))
+                    }
+                    await pipe(
+                        ['from 1 to 2'],
+                        source
+                    )
+                },
+                stream.sink
+        )
+    }
+
+    const outputHeaderElm = document.getElementById("output-header")
+    const outputElm = document.getElementById("output")
+    const statusElm = document.getElementById("status")
+    var map;
+    var data;
+    document.addEventListener('DOMContentLoaded', async () => {
+        map = L.map('mapid', {
+            zoom: 2,
+            center: [0, 0],
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        layer.addTo(map);
+
+        $("#sel1").change(function () {
+            maxK = parseInt(this.value)
+            kAnonymity(data)
+        });
+        // var CyclOSM = L.tileLayer('https://dev.{s}.tile.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+        //     maxZoom: 20,
+        //     attribution: '<a href="https://github.com/cyclosm/cyclosm-cartocss-style/releases" title="CyclOSM - Open Bicycle render">CyclOSM</a> | Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // });
+        // map.addLayer(CyclOSM)
+
+
+        const node = await Ipfs.create(IPFSConfig)
+        window.node = node
+        statusElm.innerHTML = "IPFS Started"
+        orbitdb = await OrbitDB.createInstance(node)
+
+        const status = node.isOnline() ? 'online' : 'offline'
+        console.log(`IPFS Node Id - ${orbitdb.id}`);
+        console.log(`OrbitDB Id - ${orbitdb.identity.id}`);
+        console.log(`Node status: ${status}`)
+        statusElm.innerHTML = `Node status: ${status}`
+
+        // const address = await addDatabase("hithere")
+        var root = "<%= root.toString() %>"
+        var dbname = "<%= dbname.toString() %>"
+        var userDbAddress = `/orbitdb/${root}/${dbname}`
+        statusElm.innerHTML = "Connecting to peers..."
+        var db = await orbitdb.open(userDbAddress, {
+            sync: true
+        })
+        db.events.on('ready', () => queryAndRender(db))
+        // When database gets replicated with a peer, display results
+        db.events.on('replicated', () => queryAndRender(db))
+        // When we update the database, display result
+        db.events.on('write', () => queryAndRender(db))
+
+        db.events.on('replicate.progress', () => queryAndRender(db))
+
+        // Hook up to the load progress event and render the progress
+        let maxTotal = 0,
+            loaded = 0
+        db.events.on('load.progress', (address, hash, entry, progress, total) => {
+            loaded++
+            maxTotal = Math.max.apply(null, [maxTotal, progress, 0])
+            total = Math.max.apply(null, [progress, maxTotal, total, entry.clock.time, 0])
+            statusElm.innerHTML = `Loading database... ${maxTotal} / ${total}`
+        })
+
+        db.events.on('ready', () => {
+            // Set the status text
+            setTimeout(() => {
+                statusElm.innerHTML = 'Database is ready'
+            }, 1000)
+        })
+
+        // Load locally persisted database
+        await db.load()
+
+
+        const listenerId = node.libp2p.peerId
+        // Log a message when we receive a connection
+        node.libp2p.connectionManager.on('peer:connect', (connection) => {
+            console.log('received dial to me from:', connection.remotePeer.toB58String())
+        })
+
+        // Handle incoming connections for the protocol by piping from the stream
+        // back to itself (an echo)
+        // await node.libp2p.handle('/echo/1.0.0', ({
+        //     stream
+        // }) {
+        //     for await (const msg of source) {
+        //         console.log(msg.toString())
+        //     }
+
+        // })
+
+        // await node.libp2p.handle('/echo/1.0.0', ({
+        // stream
+        // }) => {
+        // stream => (async function () {
+        // for await (const msg of source) {
+        // console.log(msg.toString())
+        // }
+        // })()
+        // })
+
+        // Handle incoming connections for the protocol by piping from the stream
+        // back to itself (an echo)
+        await node.libp2p.handle('/echo/1.0.0', ({
+            stream
+        }) => pipe(stream.source, (stream) => streamToConsole, stream.sink))
+
+        // Start listening stream.source, stream.sink, 
+        //await node.libp2p.start()
+
+
+        var listenerMultiaddr;
+        console.log('Listener ready, listening on:')
+        node.libp2p.multiaddrs.forEach((ma) => {
+            var address = ma.toString() + '/p2p/' + listenerId.toB58String()
+            // Add peer to Dial (the listener) into the PeerStore
+            listenerMultiaddr = '/ip4/127.0.0.1/tcp/10333/p2p/' + listenerId.toB58String()
+            // listenerMultiaddr =address
+            console.log(listenerMultiaddr)
+        })
+
+
+
+        const dialerId = await Ipfs.PeerId.createFromJSON(dialerConfig)
+
+        var config = IPFSConfig
+        // config['peerId']=dialerId
+        config['repo'] = '/orbitdb1/'
+
+        const dialerNode = await Ipfs.create(config)
+        // Start the dialer libp2p node
+        await dialerNode.start()
+
+        console.log('Dialer ready, listening on:')
+        dialerNode.libp2p.multiaddrs.forEach((ma) => console.log(ma.toString() +
+            '/p2p/' + dialerId.toB58String()))
+
+        // Dial the listener node
+        console.log('Dialing to peer:', listenerMultiaddr)
+        const {
+            stream
+        } = await dialerNode.libp2p.dialProtocol(listenerMultiaddr, '/echo/1.0.0')
+
+        console.log('nodeA dialed to nodeB on protocol: /echo/1.0.0')
+
+        // ['hey'] |> stream |> async function (source) {
+        //         // For each chunk of data
+        //         for await (const data of source) {
+        //             // Output the data
+        //             console.log('received echo:', data.toString())
+        //         }
+        //     };
+        pipe(
+            // Source data
+            ['hey'],
+            // Write to the stream, and pass its output to the next function
+            stream,
+            // Sink function
+            async function (source) {
+                // For each chunk of data
+                for await (const data of source) {
+                    // Output the data
+                    console.log('received echo:', data.toString())
+                }
+            }
+        )
+        // // You can write more code here to use it. Use methods like
+        // node.add, node.get. See the API docs here:
+        // https://github.com/ipfs/js-ipfs/tree/master/packages/interface-ipfs-core
+    })
+</script>
+
+
+</html>

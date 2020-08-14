@@ -1,0 +1,717 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Twitter Card</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/ipfs/dist/index.min.js"></script>
+    <script src="/orbitdb.js"></script>
+
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+
+    <script src="https://unpkg.com/h3-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.20/system-polyfills.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+
+    <style>
+        #map {
+            height: 100%;
+        }
+
+        ul.timeline {
+            list-style-type: none;
+            position: relative;
+
+            word-break: break-all;
+
+        }
+
+        ul.timeline:before {
+            content: ' ';
+            background: #d4d9df;
+            display: inline-block;
+            position: absolute;
+            left: 29px;
+            width: 2px;
+            height: 100%;
+            z-index: 400;
+        }
+
+        ul.timeline>li {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+
+        ul.timeline>li:before {
+            content: ' ';
+            background: white;
+            display: inline-block;
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid #22c0e8;
+            left: 20px;
+            width: 20px;
+            height: 20px;
+            z-index: 400;
+        }
+
+
+        .bg_blur {
+            background-color: cadetblue;
+            height: 300px;
+            background-size: cover;
+        }
+
+        .follow_btn {
+            text-decoration: none;
+            position: absolute;
+            left: 35%;
+            top: 42.5%;
+            width: 35%;
+            height: 15%;
+            background-color: #007FBE;
+            padding: 10px;
+            padding-top: 6px;
+            color: #fff;
+            text-align: center;
+            font-size: 20px;
+            border: 4px solid #007FBE;
+        }
+
+        .follow_btn:hover {
+            text-decoration: none;
+            position: absolute;
+            left: 35%;
+            top: 42.5%;
+            width: 35%;
+            height: 15%;
+            background-color: #007FBE;
+            padding: 10px;
+            padding-top: 6px;
+            color: #fff;
+            text-align: center;
+            font-size: 20px;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .header {
+            color: #808080;
+            margin-left: 10%;
+            margin-top: 70px;
+        }
+
+        .picture {
+            height: 150px;
+            width: 150px;
+            position: absolute;
+            top: 75px;
+            left: -75px;
+        }
+
+        .picture_mob {
+            position: absolute;
+            width: 35%;
+            left: 35%;
+            bottom: 70%;
+        }
+
+        .btn-style {
+            color: #fff;
+            background-color: #007FBE;
+            border-color: #adadad;
+            width: 33.3%;
+        }
+
+        .btn-style:hover {
+            color: #333;
+            background-color: #3D5DE0;
+            border-color: #adadad;
+            width: 33.3%;
+
+        }
+
+        img.secondary {
+            filter: hue-rotate(120deg);
+        }
+
+        img.primary {
+            filter: hue-rotate(60deg);
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- Image and text -->
+    <nav class="navbar navbar-light bg-light" style="background-color: #e3f2fd;">
+        <a href="/" target="_self"> <button class="btn btn-outline-success" type="button">Back</button></a>
+
+        <a class="navbar-brand" target="_self" href="/">
+            <img src="/docs/4.0/assets/brand/bootstrap-solid.svg" width="30" height="30"
+                class="d-inline-block align-top" alt="">
+            Home
+        </a>
+    </nav>
+
+    <div class="row panel">
+        <div class="col-md-4 bg_blur ">
+            <div class="col-md-4 bg_blur " class="follow_btn">
+                <label for="sel1">View Location as:</label>
+                <select class="form-control" id="sel1">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>5</option>
+                    <option>10</option>
+                    <option>15</option>
+                    <option>20</option>
+                    <option selected>30</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-8  col-xs-12">
+            <img src="http://lorempixel.com/output/people-q-c-100-100-1.jpg" class="img-thumbnail picture hidden-xs" />
+            <!-- <img src="http://lorempixel.com/output/people-q-c-100-100-1.jpg" class="img-thumbnail visible-xs picture_mob" /> -->
+            <div class="header">
+                <h1>Lorem Ipsum</h1>
+                <h4>Web Developer</h4>
+                <span>Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."
+                    "There is no one who loves pain itself, who seeks after it and wants to have it, simply because it
+                    is pain..."</span>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-md-6 p-5">
+            <div id="status">Init</div>
+            <div>
+                <header id="output-header"></header>
+                <div id="output"></div>
+            </div>
+
+        </div>
+        <div class="col-md-6 p-5">
+            <h4>Latest Tweets</h4>
+            <ul id="timeline" class="timeline">
+
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="container mt-12 mb-12">
+
+        <div id="mapid" style="height: 100%;"></div>
+    </div>
+
+
+    <div class="container mt-12 mb-12">
+        <!-- <div class="row">
+            <div class="col-md-6 ">
+                <h4>Latest Tweets</h4>
+                <ul id="timeline" class="timeline">
+
+                </ul>
+            </div>
+
+
+        </div> -->
+        <!-- <div class="col-md-12">
+            <div id="mapid" style="height: 100%;"></div>
+        </div> -->
+    </div>
+
+
+
+
+</body>
+<script>
+    function min(input) {
+        if (toString.call(input) !== "[object Array]")
+            return false;
+        return Math.min.apply(null, input);
+    }
+
+    const drwaH3 = function (h3, color) {
+        layer.addData(h3ToFeature(h3, color));
+        // , {
+        //     style: {
+        //         "color": color,
+        //         "weight": 5,
+        //         "opacity": 0.6
+        //     },
+        //     onEachFeature: function (feature, layer) {
+        //         layer.bindTooltip(feature.properties.id, {
+        //             noHide: true
+        //         });
+        //     }
+        // }
+
+    }
+
+    var maxK = 30
+    var minK = 2
+    const kAnonymity = function (sender) {
+        clearMap()
+        var array = sender.split("*");
+        var origin = array[0]
+
+        array = array.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+
+        maxK = min([maxK, array.length])
+
+        var reses = [];
+        var distances = []
+        for (let index = 0; index < array.length; index++) {
+            var h3Index = array[index];
+            var dist = h3.h3Distance(origin, h3Index)
+            distances.push([h3Index, dist])
+            var res = h3.h3GetResolution(h3Index)
+            reses.push(res)
+            // drwaH3(h3Index, "#ff7800")
+
+        }
+        distances.sort(compareSecondColumn);
+
+        //get min res
+        var minRes = min(reses.slice(minK, maxK + minK))
+
+        var points = distances.slice(minK, maxK + minK)
+
+        var maxDis = points[points.length - 1][0]
+        var minDis = points[0][0]
+        // addMarker(maxDis)
+        // addMarker(minDis)
+
+        var kanonymity = [];
+
+        var leveljump = 2;
+
+        var a = []
+        var r = []
+        points.forEach(element => {
+            var p = element[0]
+            var pp = h3.h3ToParent(p, Math.floor(Math.random() * 3) + 7)
+            // drwaH3(pp, "#7b1fa2")
+
+            var minres = 15;
+
+            // addMarker(p, "secondary")
+            for (let index = minres; index > -1; index--) {
+                console.log(index)
+                var p1 = h3.h3ToParent(p, index)
+                var p2 = h3.h3ToParent(origin, index)
+
+
+                if ((p1 == p2)&&p1) {
+                    // 
+                    a.push([p1])
+                    r.push(index)
+                    // drwaH3(p2, "#FF0000")
+                    kanonymity.push(p1)
+
+                    break;
+                }
+                else if(h3.h3IndexesAreNeighbors(p1, p2)){
+                    // drwaH3(p2, "#FF0000")
+                    // drwaH3(p1, "#FF0000")
+                    kanonymity.push(p1)
+                    kanonymity.push(p2)
+                    break;
+                }
+
+            }
+
+        });
+
+        kanonymity = kanonymity.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+        kanonymity = h3.compact(kanonymity)
+        kanonymity=kanonymity.reverse();
+
+        var fs = []
+        kanonymity.forEach(element => {
+           var f= turf.polygon([h3.h3ToGeoBoundary(element, true)], {combine: 'yes'})
+           fs.push(f)
+
+           // drwaH3(element, "#ff1744")
+            // resolutions.forEach(r =>{
+            //     var p1 = h3.h3ToParent(element, r)
+            //     if(!drawen.includes(element)){
+            //         drwaH3(element, "#ff1744")
+            //         drawen.push(element)
+            //         resolutions.push(h3.h3GetResolution(element))
+            //     }
+            // })
+
+
+            
+        });
+        var features = turf.featureCollection(fs);
+        var dissolved = turf.dissolve(features, {propertyName: 'combine'});
+
+        layer.addData(dissolved);
+        // addMarker(origin)
+        // drwaH3(origin, "#d50000")
+        // map.setView(addMarker(array[0]), 15);
+
+        // _northEast: j {
+        //     lat: 42.400492689472884,
+        //     lng: -71.57377195480383
+        // }
+        // _southWest: j {
+        //     lat: 39.34056938395393,
+        //     lng: -75.96061877033631
+        // }
+       var bb=  L.latLngBounds([
+            [39.34056938395393, -75.96061877033631],
+            [ 42.400492689472884, -71.57377195480383]
+        ])
+        map.fitBounds(bb);
+        console.log(map.getBounds());
+    }
+
+    const kAnonymityInfoLoss = function (array,origin,coordinates,maxK) {
+        
+
+        array = array.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+
+        maxK = min([maxK, array.length])
+
+        var reses = [];
+        var distances = []
+        for (let index = 0; index < array.length; index++) {
+            var h3Index = array[index];
+            var dist = h3.h3Distance(origin, h3Index)
+            distances.push([h3Index, dist])
+            var res = h3.h3GetResolution(h3Index)
+            reses.push(res)
+            // drwaH3(h3Index, "#ff7800")
+
+        }
+        distances.sort(compareSecondColumn);
+
+        //get min res
+        var minRes = min(reses.slice(minK, maxK + minK))
+
+        var points = distances.slice(minK, maxK + minK)
+
+        var maxDis = points[points.length - 1][0]
+        var minDis = points[0][0]
+        // addMarker(maxDis)
+        // addMarker(minDis)
+
+        var kanonymity = [];
+
+        var leveljump = 2;
+
+        var a = []
+        var r = []
+        points.forEach(element => {
+            var p = element[0]
+            
+
+            var minres = 15;
+
+            // addMarker(p, "secondary")
+            for (let index = minres; index > -1; index--) {
+                //c//onsole.log(index)
+                var p1 = h3.h3ToParent(p, index)
+                var p2 = h3.h3ToParent(origin, index)
+
+
+                if ((p1 == p2)&&p1) {
+                    // 
+                    a.push([p1])
+                    r.push(index)
+                    // drwaH3(p2, "#FF0000")
+                    kanonymity.push(p1)
+
+                    break;
+                }
+                else if(h3.h3IndexesAreNeighbors(p1, p2)){
+                    // drwaH3(p2, "#FF0000")
+                    // drwaH3(p1, "#FF0000")
+                    kanonymity.push(p1)
+                    kanonymity.push(p2)
+                    break;
+                }
+
+            }
+
+        });
+
+        kanonymity = kanonymity.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+        //kanonymity = h3.compact(kanonymity)
+        kanonymity=kanonymity.reverse();
+
+        var fs = []
+        kanonymity.forEach(element => {
+           var f= turf.polygon([h3.h3ToGeoBoundary(element, true)], {combine: 'yes'})
+           fs.push(f)
+            
+        });
+        var features = turf.featureCollection(fs);
+        // sleep(500).then(() => {
+            // Do something after the sleep!
+ 
+        var dissolved = turf.union(...features.features);
+        var area1 = turf.area(dissolved);
+
+        ///
+         kanonymity = [];
+
+
+        points.forEach(element => {
+            var p = element[0]
+            
+
+            var minres = 15;
+
+            // addMarker(p, "secondary")
+            for (let index = minres; index > -1; index--) {
+                //console.log(index)
+                var p1 = h3.h3ToParent(p, index)
+                var p2 = h3.h3ToParent(origin, index)
+
+
+                if ((p1 == p2)&&p1) {
+                    // 
+                    a.push([p1])
+                    r.push(index)
+                    // drwaH3(p2, "#FF0000")
+                    kanonymity.push(p1)
+
+                    break;
+                }
+               
+            }
+
+        });
+
+        kanonymity = kanonymity.filter(function (item, pos, self) {
+            return self.indexOf(item) == pos;
+        })
+        //kanonymity = h3.compact(kanonymity)
+        kanonymity=kanonymity.reverse();
+
+        fs = []
+        kanonymity.forEach(element => {
+            var f= turf.polygon([h3.h3ToGeoBoundary(element, true)], {combine: 'yes'})
+            fs.push(f)
+        });
+        features = turf.featureCollection(fs);
+        dissolved = turf.union(...features.features);
+        // dissolved = turf.dissolve(features, {propertyName: 'combine'});
+        var area2 = turf.area(dissolved);
+
+
+        ///
+        var collection = turf.featureCollection(coordinates);
+        var bbox = turf.bbox(collection);
+        var bboxPolygon = turf.bboxPolygon(bbox);
+        var area3 = turf.area(bboxPolygon);
+        console.log("output of"+maxK+" is "+[area1,area2,area3])
+        return [area1,area2,area3]
+    // });
+    }
+    function sleep (time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+    }
+
+    function compareSecondColumn(a, b) {
+        if (a[1] === b[1]) {
+            return 0;
+        } else {
+            return (a[1] < b[1]) ? -1 : 1;
+        }
+    }
+    const addMarker = function (hexis, type) {
+        var hexCenterCoordinates = h3.h3ToGeo(hexis)
+
+        if (!type)
+            type = 'primary'
+
+        var marker = L.marker(hexCenterCoordinates).addTo(map)
+        marker.bindPopup(hexis).openPopup();
+
+        marker._icon.classList.add(type);
+        markers.push(marker);
+        return hexCenterCoordinates
+    }
+
+    const h3ToFeature = function (hexAddress, color) {
+        // Wrap in an array for a single-loop polygon
+        const coordinates = [h3.h3ToGeoBoundary(hexAddress, true)];
+        var test = hexAddress + "-" + h3.hexArea(h3.h3GetResolution(hexAddress), h3.UNITS.m2) + "-" + h3
+            .h3GetResolution(hexAddress)
+        return {
+            type: 'Feature',
+            id: hexAddress,
+            properties: {
+                id: test,
+                color: color
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates
+            }
+        };
+    }
+
+    var layer = L.geoJSON(undefined, {
+        style: function (feature) {
+            return {
+                color: feature.properties.color,
+                weight: 0,
+            };
+        }
+    }).bindPopup(function (layer) {
+        return layer.feature.properties.id;
+    });
+    var markers = []
+    var data =
+        "8f2a1072d454796*8f2a1008ddae708*8f2a10013308932*8f2a1072c66ba23*8f2a100e34b0849*8f2a10069433908*8f2a1072c66ba23*8f2a10a64301d9b*8f2a1072c66ba23*8f2a1072c66ba23*8f2a100404e620e*8f2a10725b61922*8f2a1072c050b6a*8f2a10721aa5120*8f2a1072c66ba23*8f2a1070031a418*8f2a100d35991a8*8f2a104f5c8e09c*8f2a100d200662c*8f2a108a1846592*8f2a100e8a0235b*8f2a100dc15a942*8f2a1072c66ba23*8f2a1072c66ba23*8f2a1391a301171*8f2a13d35c22462*8f2a100d342e55d*8f2a1075649c6ee*8f2a100caa708c5*8f2a100db994d2d"
+    const clearMap = function () {
+        layer.clearLayers(); // inherited from LayerGroup
+        for (var i = 0; i < markers.length; i++) {
+            map.removeLayer(markers[i]);
+        }
+        markers.length = 0
+        // map.removeLayer(markers);
+        // markers = new L.FeatureGroup();
+        // map.addLayer(markers)
+    }
+
+
+    function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    
+    const outputHeaderElm = document.getElementById("output-header")
+    const outputElm = document.getElementById("output")
+    const statusElm = document.getElementById("status")
+    var map;
+    document.addEventListener('DOMContentLoaded', async () => {
+        map = L.map('mapid', {
+            zoom: 2,
+            center: [0, 0],
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        layer.addTo(map);
+
+        // add a scale at at your map.
+        var scale = L.control.scale().addTo(map);
+
+        // Get the label.
+        var metres = scale._getRoundNum(map.containerPointToLatLng([0, map.getSize().y / 2]).distanceTo(map
+            .containerPointToLatLng([scale.options.maxWidth, map.getSize().y / 2])))
+        label = metres < 1000 ? metres + ' m' : (metres / 1000) + ' km';
+
+        console.log(label);
+
+        $("#sel1").change(function () {
+            alert(this.value);
+            maxK = parseInt(this.value)
+            kAnonymity(data)
+        });
+
+        //kAnonymity(data)
+        //var position = turf.randomPosition([-180, -90, 180, 90])
+        var j=1;
+        var result = {}
+
+        while (j<10){
+            j++;
+
+            var f= turf.polygon([h3.h3ToGeoBoundary(h3.h3GetBaseCell('8f2a100d200662c'), true)], {combine: 'yes'})
+            var bbox = turf.bbox(f);
+
+            var points = turf.randomPoint(2000, {bbox: bbox})
+
+            // turf.propEach(points, function (currentProperties, featureIndex) {
+            //     currentProperties.id=featureIndex
+            //     });
+            ///
+            var k_step = [10,20,50,100,200,400,800]
+            var i = 0;
+            var closestPoints = [];
+            var hexes = [];
+            // var tfC = turf.featureCollection(features);
+            var tpC = turf.sample(points, 1);
+            var resolution = getRandomInt(13,16)
+            var origin = h3.geoToH3(tpC.features[0].geometry.coordinates[1], tpC.features[0].geometry.coordinates[0], resolution) 
+            // finding 13 (for example) closest points to nothernmost Point
+            while(i < 801) {
+                var geoJ = turf.nearestPoint(tpC.features[0], points);
+                closestPoints.push(geoJ);
+                var id = geoJ.properties.featureIndex;
+
+                var h = h3.geoToH3(geoJ.geometry.coordinates[1], geoJ.geometry.coordinates[0], resolution) 
+                hexes.push(h);
+
+                //remove from features point that was found
+                points.features.splice(id, 1);
+                if(k_step.includes(i)){
+                    if(!result[i]){
+                        result[i]  = []
+                    }
+                    
+                    try {
+                        var res= kAnonymityInfoLoss(hexes,origin,closestPoints,i);
+                        var baseArea= h3.hexArea(resolution, "m2") 
+                        res[3]=baseArea
+                        result[i].push(res)
+                    } catch (error) {
+                        console.log(error)
+                    }
+                
+                }
+                i++;
+            };
+
+           
+
+        }
+        console.log(JSON.stringify(result))
+       
+        // // You can write more code here to use it. Use methods like
+        // node.add, node.get. See the API docs here:
+        // https://github.com/ipfs/js-ipfs/tree/master/packages/interface-ipfs-core
+    })
+</script>
+
+
+</html>

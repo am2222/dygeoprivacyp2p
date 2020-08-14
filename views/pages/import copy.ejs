@@ -1,0 +1,571 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link href="browser.css" rel="stylesheet">
+</head>
+
+<body>
+    <a href="https://github.com/orbitdb/orbit-db" class="github-corner" aria-label="View source on Github"><svg
+            width="80" height="80" viewBox="0 0 250 250"
+            style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true">
+            <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+            <path
+                d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+                fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+            <path
+                d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+                fill="currentColor" class="octo-body"></path>
+        </svg></a>
+    <style>
+        .github-corner:hover .octo-arm {
+            animation: octocat-wave 560ms ease-in-out
+        }
+
+        @keyframes octocat-wave {
+
+            0%,
+            100% {
+                transform: rotate(0)
+            }
+
+            20%,
+            60% {
+                transform: rotate(-25deg)
+            }
+
+            40%,
+            80% {
+                transform: rotate(10deg)
+            }
+        }
+
+        @media (max-width:500px) {
+            .github-corner:hover .octo-arm {
+                animation: none
+            }
+
+            .github-corner .octo-arm {
+                animation: octocat-wave 560ms ease-in-out
+            }
+        }
+    </style>
+
+    <div id="logo">
+        <pre>
+                 _     _ _         _ _     
+                | |   (_) |       | | |    
+       ___  _ __| |__  _| |_    __| | |__  
+      / _ \| '__| '_ \| | __|  / _\` | '_\ 
+     | (_) | |  | |_) | | |_  | (_| | |_) |
+      \___/|_|  |_.__/|_|\__|  \__,_|_.__/ 
+
+     Peer-to-Peer Database for the Decentralized Web
+     <a href="https://github.com/orbitdb/orbit-db" target="_blank">https://github.com/orbitdb/orbit-db</a>
+      </pre>
+    </div>
+    <h2>Open or Create Local Database</h2>
+    <i>Open a database locally and create it if the database doesn't exist.</i>
+    <br><br>
+    <input id="dbname" type="text" placeholder="Database name" />
+    <button id="create" type="button" disabled>Open</button>
+    <select id="type">
+        <option value="eventlog">Eventlog</option>
+        <option value="feed">Feed</option>
+        <option value="keyvalue">Key-Value</option>
+        <option value="docstore">DocumentDB</option>
+        <option value="counter">Counter</option>
+    </select>
+    <input id="public" type="checkbox" checked> Public
+
+    <h2>Open Remote Database</h2>
+    <i>Open a database from an OrbitDB address, eg. /orbitdb/QmfY3udPcWUD5NREjrUV351Cia7q4DXNcfyRLJzUPL3wPD/hello</i>
+    <br>
+    <i><b>Note!</b> Open the remote database in an Incognito Window or in a different browser. It won't work if you
+        don't.</i>
+    <br><br>
+    <input id="dbaddress" type="text" placeholder="Address" />
+    <button id="open" type="button" disabled>Open</button>
+    <input id="readonly" type="checkbox" checked> Read-only
+    <br><br>
+    <div id="status">Init</div>
+    <div>
+        <header id="output-header"></header>
+        <div id="output"></div>
+    </div>
+    <div id="writerText"></div>
+    <script src="https://cdn.jsdelivr.net/npm/ipfs/dist/index.min.js"></script>
+    <script src="/papaparse.js"></script>
+
+    <script type="text/javascript" src="orbitdb.js" charset="utf-8"></script>
+    <!-- <script type="text/javascript" src="example.js" charset="utf-8"></script> -->
+    <script type="text/javascript">
+        const creatures = [
+            '🐙', '🐷', '🐬', '🐞',
+            '🐈', '🙉', '🐸', '🐓',
+            '🐊', '🕷', '🐠', '🐘',
+            '🐼', '🐰', '🐶', '🐥'
+        ]
+
+        const outputHeaderElm = document.getElementById("output-header")
+        const outputElm = document.getElementById("output")
+        const statusElm = document.getElementById("status")
+        const dbnameField = document.getElementById("dbname")
+        const dbAddressField = document.getElementById("dbaddress")
+        const createButton = document.getElementById("create")
+        const openButton = document.getElementById("open")
+        const createType = document.getElementById("type")
+        const writerText = document.getElementById("writerText")
+        const publicCheckbox = document.getElementById("public")
+        const readonlyCheckbox = document.getElementById("readonly")
+
+        let orbitdb, db
+        let count = 0
+        let interval = Math.floor((Math.random() * 300) + (Math.random() * 2000))
+        let updateInterval
+        let dbType, dbAddress
+        // Init UI
+        openButton.disabled = true
+        createButton.disabled = true
+        statusElm.innerHTML = "Starting IPFS..."
+
+        const load = async (db, statusText) => {
+            // Set the status text
+            statusElm.innerHTML = statusText
+
+            // When the database is ready (ie. loaded), display results
+            db.events.on('ready', () => queryAndRender(db))
+            // When database gets replicated with a peer, display results
+            db.events.on('replicated', () => queryAndRender(db))
+            // When we update the database, display result
+            db.events.on('write', () => queryAndRender(db))
+
+            db.events.on('replicate.progress', () => queryAndRender(db))
+
+            // Hook up to the load progress event and render the progress
+            let maxTotal = 0,
+                loaded = 0
+            db.events.on('load.progress', (address, hash, entry, progress, total) => {
+                loaded++
+                maxTotal = Math.max.apply(null, [maxTotal, progress, 0])
+                total = Math.max.apply(null, [progress, maxTotal, total, entry.clock.time, 0])
+                statusElm.innerHTML = `Loading database... ${maxTotal} / ${total}`
+            })
+
+            db.events.on('ready', () => {
+                // Set the status text
+                setTimeout(() => {
+                    statusElm.innerHTML = 'Database is ready'
+                }, 1000)
+            })
+
+            // Load locally persisted database
+            await db.load()
+        }
+
+        const startWriter = async (db, item) => {
+            // Set the status text
+            try {
+                await update(db, item)
+            } catch (e) {
+                console.error(e.toString())
+                writerText.innerHTML = '<span style="color: red">' + e.toString() + '</span>'
+            }
+        }
+
+        const resetDatabase = async (db) => {
+
+            if (db) {
+                await db.close()
+            }
+
+        }
+
+        const createDatabase = async (address, item) => {
+            await resetDatabase(db)
+
+            var dbAddress = undefined
+            try {
+                // const name = address | dbnameField.value
+                const name = address
+                const type = 'keyvalue'
+                const publicAccess = publicCheckbox.checked
+
+                db = await orbitdb.open(name, {
+                    // If database doesn't exist, create it
+                    create: true,
+                    overwrite: false,
+                    // Load only the local version of the database, 
+                    // don't load the latest from the network yet
+                    localOnly: false,
+                    type: type,
+                    // If "Public" flag is set, allow anyone to write to the database,
+                    // otherwise only the creator of the database can write
+                    accessController: {
+                        write: publicAccess ? ['*'] : [orbitdb.identity.id],
+                    }
+                })
+
+                db.events.on('ready', () => {
+                    // Set the status text
+                    console.log('Database is ready')
+
+                })
+
+                // Load locally persisted database
+                await db.load()
+
+                await startWriter(db, item)
+                dbAddress = db.address
+            } catch (e) {
+                console.error(e)
+            }
+            openButton.disabled = false
+            createButton.disabled = false
+            return dbAddress
+        }
+
+        // const openDatabase = async (address, item) => {
+        //     // const address = address | dbAddressField.value
+
+        //     await resetDatabase(db)
+
+        //     openButton.disabled = true
+        //     createButton.disabled = true
+
+        //     try {
+        //         statusElm.innerHTML = "Connecting to peers..."
+        //         db = await orbitdb.open(address, {
+        //             sync: true
+        //         })
+        //         await load(db, 'Loading database...')
+
+        //         if (!readonlyCheckbox.checked) {
+        //             startWriter(db, item)
+        //         } else {
+        //             writerText.innerHTML = `Listening for updates to the database...`
+        //         }
+        //     } catch (e) {
+        //         console.error(e)
+        //     }
+        //     openButton.disabled = false
+        //     createButton.disabled = false
+        // }
+
+        const readDatabase = async (address, item) => {
+            // const address = address | dbAddressField.value
+
+            await resetDatabase(db)
+
+
+            try {
+                statusElm.innerHTML = "Connecting to peers..."
+                db = await orbitdb.open(address, {
+                    sync: true
+                })
+                await load(db, 'Loading database...')
+                if (item) {
+                    delete item['user']
+                    await db.put(item['id'], JSON.stringify(item), {
+                        pin: true
+                    })
+
+                    //await startWriter(db, item)
+                }
+
+            } catch (e) {
+                console.error(e)
+            }
+
+        }
+
+        const readUserDatabase = async (address, item,dbAddress) => {
+            // const address = address | dbAddressField.value
+
+            await resetDatabase(db)
+
+            if(!item)
+                return
+
+
+            try {
+                statusElm.innerHTML = "Connecting to peers..."
+                db = await orbitdb.open(address, {
+                    sync: true
+                })
+                await load(db, 'Loading database...')
+                item['dbaddress'] =dbAddress
+                await db.put(item['id'], JSON.stringify(item), {
+                    pin: true
+                })
+
+            } catch (e) {
+                console.error(e)
+            }
+
+        }
+
+        const update = async (db, item) => {
+            const time = new Date().toISOString()
+            // await db.add(item)
+            await db.put('mykey', item, {
+                pin: true
+            })
+        }
+
+        const query = (db) => {
+            return db.get('mykey')
+        }
+
+        const queryAndRender = async (db) => {
+            const networkPeers = await window.node.swarm.peers()
+            const databasePeers = await window.node.pubsub.peers(db.address.toString())
+
+            const result = query(db)
+
+            if (dbType !== db.type || dbAddress !== db.address) {
+                dbType = db.type;
+                dbAddress = db.address;
+
+                outputHeaderElm.innerHTML = `
+        <h2>${dbType.toUpperCase()}</h2>
+        <h3 id="remoteAddress">${dbAddress}</h3>
+        <p>Copy this address and use the 'Open Remote Database' in another browser to replicate this database between peers.</p>
+      `
+            }
+
+            outputElm.innerHTML = `
+      <div><b>Peer ID:</b> ${orbitdb.id}</div>
+      <div><b>Peers (database/network):</b> ${databasePeers.length} / ${networkPeers.length}</div>
+      <div><b>Oplog Size:</b> ${Math.max(db._replicationStatus.progress, db._oplog.length)} / ${db._replicationStatus.max}</div>
+      <h2>Results</h2>
+      <div id="results">
+        <div>
+        ${result && Array.isArray(result) && result.length > 0 && db.type !== 'docstore' && db.type !== 'keyvalue'
+          ? result.slice().reverse().map((e) => e.payload.value).join('<br>\n')
+          : db.type === 'docstore'
+            ? JSON.stringify(result, null, 2)
+            : result ? result.toString().replace('"', '').replace('"', '') : result
+        }
+        </div>
+      </div>
+    `
+        }
+
+        function setCharAt(str, index, chr) {
+            if (index > str.length - 1) return str;
+            return str.substr(0, index) + chr + str.substr(index + 1);
+        }
+        const fixJSON = function (item) {
+            item = item.replace(/'/g, '"')
+            // item=item.replace(/'(\w+)'\s*:/, '"')
+            item = item.split('None').join('null')
+            item = item.split('False').join('false')
+            item = item.split('True').join('true')
+            item = item.replace('#', '')
+            item = item.replace('I"m', 'Im')
+            try {
+                return JSON.parse(item)
+            } catch (err) {
+                console.log(item)
+                var char = parseInt(err.message.split('JSON')[1].replace(" at position ", ""))
+                item = setCharAt(item,(char-1),'');
+                fixJSON(item)
+            }
+
+        }
+
+
+        const addDatabase = async (userId, item) => {
+            try {
+                const name = "_" + userId.toString()
+
+                db = await orbitdb.open(name, {
+                    // If database doesn't exist, create it
+                    create: true,
+                    overwrite: false,
+                    // Load only the local version of the database, 
+                    // don't load the latest from the network yet
+                    localOnly: false,
+                    type: 'keyvalue',
+                    // If "Public" flag is set, allow anyone to write to the database,
+                    // otherwise only the creator of the database can write
+                    accessController: {
+                        write: ['*'],
+                    }
+                })
+
+                // await load(db, 'Creating database...')
+                db.events.on('ready', () => {
+                    // Set the status text
+                    setTimeout(() => {
+                        statusElm.innerHTML = 'Database is ready'
+                    }, 1000)
+                })
+
+                // Load locally persisted database
+                await db.load()
+                // startWriter(db, item)
+                await db.put(item['user_id'] + "_usr", JSON.stringify(item['user']), {
+                    pin: true
+                })
+                delete item['user']
+                await db.put(item['id'], JSON.stringify(item), {
+                    pin: true
+                })
+                return db.address
+            } catch (e) {
+                console.error(e)
+            }
+
+        }
+
+        const addUserDatabase = async (userId,item, dbAddress) => {
+            try {
+                const name = "_" + userId.toString()
+
+                db = await orbitdb.open(name, {
+                    // If database doesn't exist, create it
+                    create: true,
+                    overwrite: false,
+                    // Load only the local version of the database, 
+                    // don't load the latest from the network yet
+                    localOnly: false,
+                    type: 'keyvalue',
+                    // If "Public" flag is set, allow anyone to write to the database,
+                    // otherwise only the creator of the database can write
+                    accessController: {
+                        write: ['*'],
+                    }
+                })
+
+                // await load(db, 'Creating database...')
+                db.events.on('ready', () => {
+                    // Set the status text
+                    setTimeout(() => {
+                        statusElm.innerHTML = 'Database is ready'
+                    }, 1000)
+                })
+
+                // Load locally persisted database
+                await db.load()
+                item['user']['dbaddress'] =dbAddress
+                await db.put(item['user_id'], JSON.stringify(item['user']), {
+                    pin: true
+                })
+                
+                return db.address
+            } catch (e) {
+                console.error(e)
+            }
+
+        }
+
+
+        const IPFSConfig = {
+            repo: '/orbitdb/examples/browser/new/ipfs/0.33.1',
+            relay: {
+                enabled: true
+            },
+            hop: {
+                enabled: true,
+                active: true
+            },
+            start: true,
+            preload: {
+                enabled: false
+            },
+            EXPERIMENTAL: {
+                pubsub: true,
+            },
+            config: {
+                Addresses: {
+                    Swarm: [
+                        // Use IPFS dev signal server
+                        // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+                        // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star', ,
+                        '/dns4/webrtc-star.discovery.libp2p.io/tcp/443/wss/p2p-webrtc-star'
+                        // '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+                        // '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+                        //'/ip4/127.0.0.1/tcp/13579/wss/p2p-webrtc-star'
+                    ]
+                },
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const node = await Ipfs.create(IPFSConfig)
+            window.node = node
+            statusElm.innerHTML = "IPFS Started"
+            orbitdb = await OrbitDB.createInstance(node)
+
+            const status = node.isOnline() ? 'online' : 'offline'
+            console.log(`IPFS Node Id - ${orbitdb.id}`);
+            console.log(`OrbitDB Id - ${orbitdb.identity.id}`);
+            console.log(`Node status: ${status}`)
+            statusElm.innerHTML = `Node status: ${status}`
+
+            // const address = await addDatabase("hithere")
+            var userDbAddress=  "/orbitdb/zdpuAsmVucRqAwPuwaB5b1vDuLRZ4P2RF6yEX2Ff3P274GMdw/_users"
+            //var userDbAddress = await addUserDatabase("users", {"user":{}},"address");
+            Papa.parse("/t_01loc.csv", {
+                download: true,
+                complete: async function (results) {
+                    console.log(results);
+                    var processed = []
+                    var addresses = []
+                    var data = results.data
+                    for (var i = 1; i < results.data.length; i++) {
+                        var item = data[i]
+                        if(!item[8])
+                            continue;
+
+                        item = {
+                            lon: item[2],
+                            lat: item[3],
+                            created_at: item[4],
+                            id: item[5],
+                            full_text: (item[6]),
+                            entities: fixJSON(item[7]),
+                            user: fixJSON(item[8]),
+                            user_id: item[9],
+                            geo_enabled: item[10],
+                            retweet_count: item[11],
+                            favorite_count: item[12],
+                            locs: item[14].split('*'),
+                        }
+
+
+
+                        var user = item['user']
+                        console.log(userDbAddress)
+                        var userId = item['user_id']
+                        if (processed.indexOf(userId) != -1) {
+                            var address = addresses[processed.indexOf(userId)]
+                            
+                            await readDatabase(`/orbitdb/${address['root']}/${address['path']}`,
+                                item)
+                            // await openDatabase(address, item)
+                        } else {
+                            processed.push(userId)
+                           
+                            var address = await addDatabase(userId, item)
+                            addresses.push(address)
+                            await readUserDatabase(userDbAddress, user, `/orbitdb/${address['root']}/${address['path']}`);
+                            
+                        }
+                    }
+                    console.log(addresses)
+                }
+            });
+
+
+            // You can write more code here to use it. Use methods like
+            // node.add, node.get. See the API docs here:
+            // https://github.com/ipfs/js-ipfs/tree/master/packages/interface-ipfs-core
+        })
+    </script>
+    <link href="https://fonts.googleapis.com/css?family=Abel" rel="stylesheet">
+</body>
+
+</html>
